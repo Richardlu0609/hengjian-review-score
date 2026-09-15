@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createXlsx } from "@/lib/xlsx";
 import {
   assignAll, deleteRows, insertOne, loadAdminData, loadEvents, loadJudgeSnapshot,
-  loadSession, randomToken, saveJudgeScore, signIn, signOut, signUp, updateRows,
+  loadSession, randomToken, resendSignupVerification, saveJudgeScore, signIn, signOut, signUp, updateRows,
 } from "./api";
 import { APP_NAME, APP_SUBTITLE } from "./config";
 import { calculateOverview } from "./results";
@@ -30,6 +30,7 @@ function AdminAuth({ onAuthenticated }: { onAuthenticated: (session: AuthSession
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [email, setEmail] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,18 +49,34 @@ function AdminAuth({ onAuthenticated }: { onAuthenticated: (session: AuthSession
     finally { setBusy(false); }
   }
 
+  async function resendVerification() {
+    if (!email.trim()) {
+      setNotice("请先填写需要验证的管理员邮箱。");
+      return;
+    }
+    setBusy(true); setNotice("");
+    try {
+      await resendSignupVerification(email.trim());
+      setNotice("新的验证邮件已发送，请检查收件箱、垃圾邮件和广告邮件；一分钟内请勿重复发送。");
+    } catch (error) { setNotice(messageOf(error)); }
+    finally { setBusy(false); }
+  }
+
   return <main className="auth-page">
     <section className="auth-card">
       <Brand />
       <div className="auth-copy"><span className="eyebrow">ADMIN CONSOLE</span><h1>管理员后台</h1><p>创建活动、分配项目并实时查看全部评委的汇总成绩。</p></div>
       <form onSubmit={submit} className="stack">
-        <label>管理员邮箱<input name="email" type="email" required autoComplete="email" placeholder="name@example.com" /></label>
+        <label>管理员邮箱<input name="email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" /></label>
         <label>密码<input name="password" type="password" required minLength={6} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="至少 6 位" /></label>
         {notice ? <div className="notice">{notice}</div> : null}
         <button className="primary" disabled={busy}>{busy ? "处理中…" : mode === "login" ? "登录后台" : "创建管理员账号"}</button>
       </form>
       <button className="text-button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setNotice(""); }}>
         {mode === "login" ? "首次使用？创建管理员账号" : "已有账号？返回登录"}
+      </button>
+      <button className="text-button" type="button" disabled={busy} onClick={() => void resendVerification()}>
+        没收到验证邮件？重新发送
       </button>
     </section>
   </main>;
