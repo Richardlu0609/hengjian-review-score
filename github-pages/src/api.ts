@@ -1,4 +1,4 @@
-import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config";
+import { APP_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./config";
 import type {
   AdminData, Assignment, AuthSession, Criterion, Judge, JudgeSnapshot,
   Project, ReviewEvent, Score, Submission,
@@ -72,7 +72,12 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
 }
 
 export async function signUp(email: string, password: string): Promise<{ session: AuthSession | null; message: string }> {
-  const payload = await authRequest("signup", { email, password, data: { display_name: email.split("@")[0] } });
+  const payload = await authRequest("signup", {
+    email,
+    password,
+    data: { display_name: email.split("@")[0] },
+    email_redirect_to: APP_URL,
+  });
   const session = normalizeSession(payload);
   if (session) storeSession(session);
   return {
