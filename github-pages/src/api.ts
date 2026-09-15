@@ -86,6 +86,14 @@ export async function signUp(email: string, password: string): Promise<{ session
   };
 }
 
+export async function resendSignupVerification(email: string): Promise<void> {
+  await authRequest("resend", {
+    type: "signup",
+    email,
+    email_redirect_to: APP_URL,
+  });
+}
+
 export function signOut(): void { storeSession(null); }
 
 async function validSession(): Promise<AuthSession> {
